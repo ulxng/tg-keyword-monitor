@@ -32,3 +32,21 @@ log_to_stdout: true
 
 # Optional log file path. Omit or set to null to disable file logging.
 log_file: null
+
+# --- Proxy (optional) ---
+# Раскомментировать если провайдер блокирует прямые подключения к Telegram.
+#
+# SOCKS5 (рекомендуется):
+# proxy:
+#   type: socks5
+#   host: "127.0.0.1"
+#   port: 1080
+#   username: "user"    # опционально
+#   password: "pass"    # опционально
+#
+# MTProto:
+# proxy:
+#   type: mtproto
+#   host: "proxy.example.com"
+#   port: 443
+#   secret: "abc123..."

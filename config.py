@@ -17,6 +17,30 @@ class MonitorConfig:
     log_level: str = "INFO"
     log_to_stdout: bool = True
     log_file: str | None = None
+    proxy_type: str | None = None
+    proxy_host: str | None = None
+    proxy_port: int | None = None
+    proxy_secret: str | None = None
+    proxy_username: str | None = None
+    proxy_password: str | None = None
+
+
+def _parse_proxy(proxy: dict) -> dict:
+    if not proxy.get("type"):
+        return {}
+    ptype = str(proxy["type"]).lower()
+    if ptype not in ("socks4", "socks5", "mtproto"):
+        sys.exit(f"Unknown proxy type '{proxy['type']}'. Supported: socks4, socks5, mtproto")
+    if not proxy.get("host") or not proxy.get("port"):
+        sys.exit("proxy.host and proxy.port are required when proxy is configured")
+    return {
+        "proxy_type": ptype,
+        "proxy_host": str(proxy["host"]),
+        "proxy_port": int(proxy["port"]),
+        "proxy_secret": str(proxy["secret"]) if proxy.get("secret") else None,
+        "proxy_username": str(proxy["username"]) if proxy.get("username") else None,
+        "proxy_password": str(proxy["password"]) if proxy.get("password") else None,
+    }
 
 
 def load_config(path: str = "config.yaml") -> MonitorConfig:
@@ -48,4 +72,5 @@ def load_config(path: str = "config.yaml") -> MonitorConfig:
         log_level=str(data.get("log_level", "INFO")).upper(),
         log_to_stdout=bool(data.get("log_to_stdout", True)),
         log_file=data.get("log_file") or None,
+        **_parse_proxy(data.get("proxy") or {}),
     )

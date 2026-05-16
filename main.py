@@ -10,6 +10,24 @@ from forwarder import RateLimiter, forward_match
 from matcher import compile_keywords, find_matches
 
 
+def _build_proxy_kwargs(config) -> dict:
+    if not config.proxy_type:
+        return {}
+    ptype = config.proxy_type
+    if ptype == "mtproto":
+        from telethon.network import ConnectionTcpMTProxyRandomizedIntermediate
+        return {
+            "connection": ConnectionTcpMTProxyRandomizedIntermediate,
+            "proxy": (config.proxy_host, config.proxy_port, config.proxy_secret),
+        }
+    import socks
+    socks_type = socks.SOCKS5 if ptype == "socks5" else socks.SOCKS4
+    proxy = (socks_type, config.proxy_host, config.proxy_port)
+    if config.proxy_username:
+        proxy += (True, config.proxy_username, config.proxy_password)
+    return {"proxy": proxy}
+
+
 def setup_logging(config) -> None:
     handlers = []
     if config.log_to_stdout:
@@ -40,7 +58,12 @@ async def main() -> None:
     dedup.prune_old(days=7)
     rate_limiter = RateLimiter(config.rate_limit_per_minute)
 
-    client = TelegramClient(config.session_file, config.api_id, config.api_secret)
+    client = TelegramClient(
+        config.session_file,
+        config.api_id,
+        config.api_secret,
+        **_build_proxy_kwargs(config),
+    )
 
     print("Starting — first run requires phone auth (one-time only).")
     await client.start(phone=lambda: input("Phone number (international format): "))
