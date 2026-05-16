@@ -78,18 +78,25 @@ async def main() -> None:
             password = input("Enter your 2FA password: ").strip()
             await client.sign_in(password=password)
 
+    logger.info("Loading dialogs to resolve chat entities...")
+    await client.get_dialogs()
+    logger.info("Dialogs loaded.")
+
     @client.on(events.NewMessage)
     async def handler(event):
         try:
             if event.out:
                 return
             text = event.raw_text or ""
+            chat_id = event.chat_id
+            msg_id = event.message.id
+            logger.debug("Message received: chat_id=%s msg_id=%s text=%r", chat_id, msg_id, text[:100])
             matched = find_matches(text, compiled_kws)
             if not matched:
                 return
-            chat_id = event.chat_id
-            msg_id = event.message.id
+            logger.debug("Keyword match: %s in chat_id=%s msg_id=%s", matched, chat_id, msg_id)
             if dedup.is_seen(chat_id, msg_id):
+                logger.debug("Skipping duplicate: chat_id=%s msg_id=%s", chat_id, msg_id)
                 return
             dedup.mark_seen(chat_id, msg_id)
             await forward_match(client, config, event, matched, rate_limiter)

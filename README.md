@@ -73,6 +73,16 @@ docker compose logs -f
 docker compose down
 ```
 
+### Узнать chat_id группы
+
+Если не знаешь точный ID для `destination_chat`:
+
+```bash
+docker compose run --rm monitor /venv/bin/python list_dialogs.py
+```
+
+Выведет список всех диалогов в формате `ID  Название`. Найди нужную группу и скопируй ID в конфиг.
+
 ### Обновление зависимостей
 
 Если изменился `requirements.txt`, нужно пересоздать venv-volume:
