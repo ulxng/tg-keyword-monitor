@@ -6,6 +6,7 @@ from datetime import timezone
 
 from telethon import TelegramClient
 from telethon.errors import ChatForwardsRestrictedError, FloodWaitError
+from telethon.tl.types import Channel
 
 from config import MonitorConfig
 
@@ -33,9 +34,24 @@ def _fallback_notification(event) -> str:
     chat_username = getattr(chat, "username", None)
     chat_label = f"{chat_name} (@{chat_username})" if chat_username else chat_name
 
+    # Когда пересылка запрещена, оригинальное сообщение недоступно — добавляем прямую ссылку,
+    # чтобы можно было перейти к нему вручную.
+    # Ссылки работают только в супергруппах и каналах (тип Channel);
+    # обычные группы (тип Chat) их не поддерживают.
+    # chat.id возвращает ID без префикса -100, что и нужно для t.me/c/{id}/{msg_id}.
+    link = None
+    if isinstance(chat, Channel):
+        msg_id = event.message.id
+        link = f"https://t.me/{chat_username}/{msg_id}" if chat_username else f"https://t.me/c/{chat.id}/{msg_id}"
+
     date = event.message.date.astimezone(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
 
-    return f"Чат: {chat_label}\nВремя: {date}\n\n{event.raw_text}"
+    lines = [f"Чат: {chat_label}", f"Время: {date}"]
+    if link:
+        lines.append(f"Ссылка: {link}")
+    lines += ["", event.raw_text]
+
+    return "\n".join(lines)
 
 
 async def forward_match(
