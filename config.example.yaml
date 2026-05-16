@@ -22,10 +22,13 @@ session_file: "monitor.session"
 db_file: "seen.db"
 
 # Seconds to wait between forwarded messages (flood protection).
-send_delay_seconds: 1.5
+send_delay_seconds: 0.5
 
 # Max forwarded messages per minute across all keywords (hard cap).
-rate_limit_per_minute: 20
+# Для destination = Saved Messages / собственный канал можно безопасно повышать:
+# антиспам Telegram срабатывает в первую очередь на жалобы получателей,
+# которых в этом сценарии нет. Лимит оставлен как safety-net.
+rate_limit_per_minute: 60
 
 # Logging level: DEBUG, INFO, WARNING, ERROR
 log_level: "INFO"

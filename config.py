@@ -12,8 +12,8 @@ class MonitorConfig:
     keywords: list[str]
     session_file: str = "monitor.session"
     db_file: str = "seen.db"
-    send_delay_seconds: float = 1.5
-    rate_limit_per_minute: int = 20
+    send_delay_seconds: float = 0.5
+    rate_limit_per_minute: int = 60
     log_level: str = "INFO"
     log_to_stdout: bool = True
     log_file: str | None = None
