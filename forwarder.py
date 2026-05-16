@@ -28,11 +28,16 @@ class RateLimiter:
         return True
 
 
+def _chat_label(chat) -> str:
+    name = getattr(chat, "title", None) or getattr(chat, "first_name", None) or "Unknown chat"
+    username = getattr(chat, "username", None)
+    return f"{name} (@{username})" if username else name
+
+
 def _fallback_notification(event) -> str:
     chat = event.chat
-    chat_name = getattr(chat, "title", None) or getattr(chat, "first_name", None) or "Unknown chat"
     chat_username = getattr(chat, "username", None)
-    chat_label = f"{chat_name} (@{chat_username})" if chat_username else chat_name
+    chat_label = _chat_label(chat)
 
     # Когда пересылка запрещена, оригинальное сообщение недоступно — добавляем прямую ссылку,
     # чтобы можно было перейти к нему вручную.
@@ -62,7 +67,13 @@ async def forward_match(
     rate_limiter: RateLimiter,
 ) -> bool:
     if not rate_limiter.is_allowed():
-        logger.warning("Rate limit reached, dropping match from chat %s", event.chat_id)
+        logger.warning(
+            'Rate limit reached, dropping match [%s] from "%s" (id=%s, msg_id=%s)',
+            ", ".join(matched_keywords),
+            _chat_label(event.chat),
+            event.chat_id,
+            event.message.id,
+        )
         return False
 
     try:
