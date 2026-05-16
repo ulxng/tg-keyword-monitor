@@ -2,6 +2,8 @@ import asyncio
 import logging
 import sys
 
+import qrcode
+
 from telethon import TelegramClient, events
 from telethon.errors import SessionPasswordNeededError
 
@@ -68,15 +70,28 @@ async def main() -> None:
 
     await client.connect()
     if not await client.is_user_authorized():
-        print("First run — authorization required.")
-        phone = input("Phone number (international format): ").strip()
-        await client.send_code_request(phone)
-        code = input("Enter the code you received: ").strip()
-        try:
-            await client.sign_in(phone, code)
-        except SessionPasswordNeededError:
-            password = input("Enter your 2FA password: ").strip()
-            await client.sign_in(password=password)
+        print("Scan the QR code below with your Telegram app.")
+        max_attempts = 3
+        for attempt in range(1, max_attempts + 1):
+            qr_login = await client.qr_login()
+            qr = qrcode.QRCode()
+            qr.add_data(qr_login.url)
+            qr.make()
+            qr.print_ascii(invert=True)
+            print(f"Waiting for scan... (attempt {attempt}/{max_attempts})")
+            try:
+                await qr_login.wait()
+                break
+            except SessionPasswordNeededError:
+                password = input("2FA password: ").strip()
+                await client.sign_in(password=password)
+                break
+            except asyncio.TimeoutError:
+                logger.warning("QR code expired (attempt %d/%d)", attempt, max_attempts)
+                if attempt == max_attempts:
+                    sys.exit("QR code expired too many times. Please restart and try again.")
+            except Exception as e:
+                sys.exit(f"Authorization failed: {e}\nPlease restart and try again.")
 
     logger.info("Loading dialogs to resolve chat entities...")
     await client.get_dialogs()

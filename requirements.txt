@@ -1,3 +1,4 @@
 telethon==1.36.0
 PyYAML==6.0.2
 PySocks==1.7.1
+qrcode==8.0
