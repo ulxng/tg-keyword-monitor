@@ -23,6 +23,8 @@ class MonitorConfig:
     proxy_secret: str | None = None
     proxy_username: str | None = None
     proxy_password: str | None = None
+    chat_whitelist: list[int] | None = None
+    chat_blacklist: list[int] | None = None
 
 
 def _parse_proxy(proxy: dict) -> dict:
@@ -60,6 +62,11 @@ def load_config(path: str = "config.yaml") -> MonitorConfig:
     if not isinstance(data["keywords"], list) or not data["keywords"]:
         sys.exit("'keywords' must be a non-empty list in config.yaml")
 
+    whitelist = [int(x) for x in data["chat_whitelist"]] if data.get("chat_whitelist") else None
+    blacklist = [int(x) for x in data["chat_blacklist"]] if data.get("chat_blacklist") else None
+    if whitelist and blacklist:
+        sys.exit("chat_whitelist and chat_blacklist are mutually exclusive — use only one.")
+
     return MonitorConfig(
         api_id=int(data["api_id"]),
         api_secret=str(data["api_secret"]),
@@ -73,4 +80,6 @@ def load_config(path: str = "config.yaml") -> MonitorConfig:
         log_to_stdout=bool(data.get("log_to_stdout", True)),
         log_file=data.get("log_file") or None,
         **_parse_proxy(data.get("proxy") or {}),
+        chat_whitelist=whitelist,
+        chat_blacklist=blacklist,
     )

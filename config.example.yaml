@@ -36,6 +36,18 @@ log_to_stdout: true
 # Optional log file path. Omit or set to null to disable file logging.
 log_file: null
 
+# --- Chat filtering (optional) ---
+# Только один из списков может быть задан одновременно.
+#
+# Мониторить только эти чаты:
+# chat_whitelist:
+#   - -1001234567890
+#   - -1009876543210
+#
+# Мониторить всё кроме этих чатов:
+# chat_blacklist:
+#   - -1001234567890
+
 # --- Proxy (optional) ---
 # Раскомментировать если провайдер блокирует прямые подключения к Telegram.
 #

@@ -97,10 +97,19 @@ async def main() -> None:
     await client.get_dialogs()
     logger.info("Dialogs loaded.")
 
+    def _should_process(event: events.NewMessage.Event) -> bool:
+        if event.out or event.is_private:
+            return False
+        if config.chat_whitelist is not None and event.chat_id not in config.chat_whitelist:
+            return False
+        if config.chat_blacklist is not None and event.chat_id in config.chat_blacklist:
+            return False
+        return True
+
     @client.on(events.NewMessage)
     async def handler(event):
         try:
-            if event.out or event.is_private:
+            if not _should_process(event):
                 return
             text = event.raw_text or ""
             chat_id = event.chat_id
