@@ -2,9 +2,10 @@ import asyncio
 import logging
 import time
 from collections import deque
+from datetime import timezone
 
 from telethon import TelegramClient
-from telethon.errors import FloodWaitError
+from telethon.errors import ChatForwardsRestrictedError, FloodWaitError
 
 from config import MonitorConfig
 
@@ -26,6 +27,17 @@ class RateLimiter:
         return True
 
 
+def _fallback_notification(event) -> str:
+    chat = event.chat
+    chat_name = getattr(chat, "title", None) or getattr(chat, "first_name", None) or "Unknown chat"
+    chat_username = getattr(chat, "username", None)
+    chat_label = f"{chat_name} (@{chat_username})" if chat_username else chat_name
+
+    date = event.message.date.astimezone(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
+
+    return f"Чат: {chat_label}\nВремя: {date}\n\n{event.raw_text}"
+
+
 async def forward_match(
     client: TelegramClient,
     config: MonitorConfig,
@@ -45,6 +57,13 @@ async def forward_match(
             event.chat_id,
             event.message.id,
         )
+    except ChatForwardsRestrictedError:
+        logger.info("Forward restricted in chat %s, sending fallback notification", event.chat_id)
+        try:
+            await client.send_message(config.destination_chat, _fallback_notification(event))
+        except Exception:
+            logger.exception("Failed to send fallback notification for chat %s msg %s", event.chat_id, event.message.id)
+        return
     except FloodWaitError as e:
         wait = e.seconds + 5
         logger.warning("FloodWaitError: sleeping %ds then retrying", wait)
