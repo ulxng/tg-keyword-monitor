@@ -1,0 +1,8 @@
+*.session
+*.session-journal
+config.yaml
+seen.db
+monitor.log
+__pycache__/
+*.pyc
+.env

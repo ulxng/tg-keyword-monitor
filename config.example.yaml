@@ -1,0 +1,34 @@
+# Telegram API credentials — get from https://my.telegram.org
+api_id: 12345678
+api_secret: "your_api_hash_here"
+
+# Where to send keyword match notifications.
+# Can be a numeric chat ID (e.g. -1001234567890) or a @username.
+destination_chat: "@my_alerts_channel"
+
+# Keywords to monitor. Each entry is a plain string (case-insensitive
+# substring match by default). Prefix with "re:" to use a regex pattern.
+keywords:
+  - "urgent"
+  - "budget approval"
+  - "re:invoice\\s*#?\\d+"
+
+# --- Optional settings ---
+
+# Session file path (default: ./monitor.session)
+session_file: "monitor.session"
+
+# Seconds to wait between forwarded messages (flood protection).
+send_delay_seconds: 1.5
+
+# Max forwarded messages per minute across all keywords (hard cap).
+rate_limit_per_minute: 20
+
+# Logging level: DEBUG, INFO, WARNING, ERROR
+log_level: "INFO"
+
+# Also log matches to stdout.
+log_to_stdout: true
+
+# Optional log file path. Omit or set to null to disable file logging.
+log_file: "monitor.log"
