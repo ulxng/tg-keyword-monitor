@@ -1,5 +1,5 @@
 import sqlite3
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 
 class DedupStore:
@@ -27,12 +27,12 @@ class DedupStore:
     def mark_seen(self, chat_id: int, message_id: int) -> None:
         self._conn.execute(
             "INSERT OR IGNORE INTO seen_messages (chat_id, message_id, seen_at) VALUES (?, ?, ?)",
-            (chat_id, message_id, datetime.utcnow().isoformat()),
+            (chat_id, message_id, datetime.now(timezone.utc).isoformat()),
         )
         self._conn.commit()
 
     def prune_old(self, days: int = 7) -> None:
-        cutoff = (datetime.utcnow() - timedelta(days=days)).isoformat()
+        cutoff = (datetime.now(timezone.utc) - timedelta(days=days)).isoformat()
         self._conn.execute("DELETE FROM seen_messages WHERE seen_at < ?", (cutoff,))
         self._conn.commit()
 
