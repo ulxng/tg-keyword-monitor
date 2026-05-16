@@ -3,8 +3,11 @@ api_id: 12345678
 api_secret: "your_api_hash_here"
 
 # Where to send keyword match notifications.
-# Can be a numeric chat ID (e.g. -1001234567890) or a @username.
-destination_chat: "@my_alerts_channel"
+# Варианты:
+#   "me"              — Избранное (Saved Messages)
+#   "@username"       — публичный канал или группа
+#   -1001234567890    — приватная группа/канал по numeric ID (без кавычек)
+destination_chat: "me"
 
 # Keywords to monitor. Each entry is a plain string (case-insensitive
 # substring match by default). Prefix with "re:" to use a regex pattern.
