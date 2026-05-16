@@ -4,17 +4,9 @@
 
 ## Требования
 
-- Python 3.11+
-- Аккаунт Telegram
-- API credentials с [my.telegram.org](https://my.telegram.org)
-
-## Установка
-
-```bash
-git clone <repo>
-cd tg-keyword-monitor
-pip install -r requirements.txt
-```
+- Docker + Docker Compose (рекомендуется)
+- или Python 3.12+ для локального запуска
+- Аккаунт Telegram и API credentials с [my.telegram.org](https://my.telegram.org)
 
 ## Получение API credentials
 
@@ -29,28 +21,40 @@ pip install -r requirements.txt
 cp config.example.yaml config.yaml
 ```
 
-Открыть `config.yaml` и заполнить:
+Открыть `config.yaml` и заполнить обязательные поля:
 
 ```yaml
-api_id: 12345678           # из my.telegram.org
-api_secret: "abc123..."    # из my.telegram.org
+api_id: 12345678
+api_secret: "your_api_hash"
 
-destination_chat: "@username"  # куда пересылать (username или числовой ID чата)
+destination_chat: "@username"  # куда пересылать (username или числовой ID)
 
 keywords:
   - "важное слово"
   - "re:invoice\\s*#?\\d+"  # regex — добавить префикс "re:"
 ```
 
-Полный список настроек с описанием — в `config.example.yaml`.
+При запуске через Docker также указать пути в `data/`:
 
-## Запуск
-
-```bash
-python main.py
+```yaml
+session_file: "/app/data/monitor.session"
+db_file: "/app/data/seen.db"
+log_file: "/app/data/monitor.log"
 ```
 
-При первом запуске потребуется авторизация:
+Полный список настроек — в `config.example.yaml`.
+
+## Запуск через Docker (рекомендуется)
+
+### Первый запуск — авторизация
+
+При первом запуске Telegram попросит номер телефона и код подтверждения.
+Это интерактивная сессия, поэтому запускать нужно без `-d`:
+
+```bash
+mkdir -p data
+docker compose run --rm monitor
+```
 
 ```
 Phone number (international format): +79991234567
@@ -58,18 +62,48 @@ Enter the code you received: 12345
 Enter your 2FA password (if set, else press Enter):
 ```
 
-После этого создастся файл `monitor.session` — повторная авторизация не потребуется.
+После авторизации в `data/` появится `monitor.session`. Контейнер можно остановить.
 
-## Фоновый запуск (24/7)
+### Обычный запуск
 
-**Через screen:**
 ```bash
-screen -dmS tgmon python main.py
-# вернуться к логам:
-screen -r tgmon
+docker compose up -d
 ```
 
-**Через systemd (Linux):**
+Логи:
+
+```bash
+docker compose logs -f
+```
+
+Остановка:
+
+```bash
+docker compose down
+```
+
+### Обновление зависимостей
+
+Если изменился `requirements.txt`, нужно пересоздать venv-volume:
+
+```bash
+docker compose down
+docker volume rm tg-keyword-monitor_venv
+docker compose up -d
+```
+
+---
+
+## Локальный запуск (без Docker)
+
+```bash
+python -m venv .venv
+source .venv/bin/activate   # Windows: .venv\Scripts\activate
+pip install -r requirements.txt
+python main.py
+```
+
+### Фоновый запуск через systemd (Linux)
 
 Создать файл `/etc/systemd/system/tgmon.service`:
 
@@ -80,7 +114,7 @@ After=network.target
 
 [Service]
 WorkingDirectory=/path/to/tg-keyword-monitor
-ExecStart=/usr/bin/python3 main.py
+ExecStart=/path/to/tg-keyword-monitor/.venv/bin/python main.py
 Restart=always
 RestartSec=10
 
@@ -93,12 +127,14 @@ sudo systemctl enable --now tgmon
 sudo systemctl status tgmon
 ```
 
+---
+
 ## Файлы, которые создаются при работе
 
 | Файл | Описание |
 |---|---|
-| `monitor.session` | Telegram-сессия (не удалять) |
-| `seen.db` | SQLite база для дедупликации |
-| `monitor.log` | Лог (если указан `log_file` в конфиге) |
+| `data/monitor.session` | Telegram-сессия (не удалять) |
+| `data/seen.db` | SQLite база для дедупликации |
+| `data/monitor.log` | Лог (если указан `log_file` в конфиге) |
 
-Все три файла добавлены в `.gitignore`.
+Папка `data/` и все три файла добавлены в `.gitignore`.

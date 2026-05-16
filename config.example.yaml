@@ -15,8 +15,10 @@ keywords:
 
 # --- Optional settings ---
 
-# Session file path (default: ./monitor.session)
-session_file: "monitor.session"
+# When running via Docker, set these to /app/data/ so files persist on the host.
+# When running locally, defaults (current directory) are fine.
+session_file: "monitor.session"     # Docker: /app/data/monitor.session
+db_file: "seen.db"                  # Docker: /app/data/seen.db
 
 # Seconds to wait between forwarded messages (flood protection).
 send_delay_seconds: 1.5
@@ -31,4 +33,5 @@ log_level: "INFO"
 log_to_stdout: true
 
 # Optional log file path. Omit or set to null to disable file logging.
-log_file: "monitor.log"
+# Docker: /app/data/monitor.log
+log_file: null

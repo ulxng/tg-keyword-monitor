@@ -36,7 +36,7 @@ async def main() -> None:
     except ValueError as e:
         sys.exit(str(e))
 
-    dedup = DedupStore()
+    dedup = DedupStore(db_path=config.db_file)
     dedup.prune_old(days=7)
     rate_limiter = RateLimiter(config.rate_limit_per_minute)
 

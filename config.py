@@ -1,6 +1,5 @@
 import sys
-from dataclasses import dataclass, field
-from typing import Optional, Union
+from dataclasses import dataclass
 
 import yaml
 
@@ -9,14 +8,15 @@ import yaml
 class MonitorConfig:
     api_id: int
     api_secret: str
-    destination_chat: Union[str, int]
+    destination_chat: str | int
     keywords: list[str]
     session_file: str = "monitor.session"
+    db_file: str = "seen.db"
     send_delay_seconds: float = 1.5
     rate_limit_per_minute: int = 20
     log_level: str = "INFO"
     log_to_stdout: bool = True
-    log_file: Optional[str] = None
+    log_file: str | None = None
 
 
 def load_config(path: str = "config.yaml") -> MonitorConfig:
@@ -42,6 +42,7 @@ def load_config(path: str = "config.yaml") -> MonitorConfig:
         destination_chat=data["destination_chat"],
         keywords=[str(k) for k in data["keywords"]],
         session_file=str(data.get("session_file", "monitor.session")),
+        db_file=str(data.get("db_file", "seen.db")),
         send_delay_seconds=float(data.get("send_delay_seconds", 1.5)),
         rate_limit_per_minute=int(data.get("rate_limit_per_minute", 20)),
         log_level=str(data.get("log_level", "INFO")).upper(),
