@@ -3,6 +3,7 @@ import logging
 import sys
 
 from telethon import TelegramClient, events
+from telethon.errors import SessionPasswordNeededError
 
 from config import load_config
 from dedup import DedupStore
@@ -65,8 +66,17 @@ async def main() -> None:
         **_build_proxy_kwargs(config),
     )
 
-    print("Starting — first run requires phone auth (one-time only).")
-    await client.start(phone=lambda: input("Phone number (international format): "))
+    await client.connect()
+    if not await client.is_user_authorized():
+        print("First run — authorization required.")
+        phone = input("Phone number (international format): ").strip()
+        await client.send_code_request(phone)
+        code = input("Enter the code you received: ").strip()
+        try:
+            await client.sign_in(phone, code)
+        except SessionPasswordNeededError:
+            password = input("Enter your 2FA password: ").strip()
+            await client.sign_in(password=password)
 
     @client.on(events.NewMessage)
     async def handler(event):
