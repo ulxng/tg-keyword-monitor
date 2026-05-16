@@ -3,7 +3,6 @@
 config.yaml
 seen.db
 monitor.log
-data/
 __pycache__/
 *.pyc
 .env

@@ -34,25 +34,16 @@ keywords:
   - "re:invoice\\s*#?\\d+"  # regex — добавить префикс "re:"
 ```
 
-При запуске через Docker также указать пути в `data/`:
-
-```yaml
-session_file: "/app/data/monitor.session"
-db_file: "/app/data/seen.db"
-log_file: "/app/data/monitor.log"
-```
-
 Полный список настроек — в `config.example.yaml`.
 
 ## Запуск через Docker (рекомендуется)
 
 ### Первый запуск — авторизация
 
-При первом запуске Telegram попросит номер телефона и код подтверждения.
-Это интерактивная сессия, поэтому запускать нужно без `-d`:
+При первом запуске нужно ввести номер телефона и код из Telegram.
+Запускать без `-d`, чтобы был доступ к stdin:
 
 ```bash
-mkdir -p data
 docker compose run --rm monitor
 ```
 
@@ -62,7 +53,7 @@ Enter the code you received: 12345
 Enter your 2FA password (if set, else press Enter):
 ```
 
-После авторизации в `data/` появится `monitor.session`. Контейнер можно остановить.
+После авторизации в корне проекта появится `monitor.session`. Контейнер можно остановить.
 
 ### Обычный запуск
 
@@ -133,8 +124,8 @@ sudo systemctl status tgmon
 
 | Файл | Описание |
 |---|---|
-| `data/monitor.session` | Telegram-сессия (не удалять) |
-| `data/seen.db` | SQLite база для дедупликации |
-| `data/monitor.log` | Лог (если указан `log_file` в конфиге) |
+| `monitor.session` | Telegram-сессия (не удалять) |
+| `seen.db` | SQLite база для дедупликации |
+| `monitor.log` | Лог (если указан `log_file` в конфиге) |
 
-Папка `data/` и все три файла добавлены в `.gitignore`.
+Все файлы добавлены в `.gitignore`.
