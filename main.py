@@ -85,7 +85,7 @@ async def main() -> None:
     @client.on(events.NewMessage)
     async def handler(event):
         try:
-            if event.out:
+            if event.out or event.is_private:
                 return
             text = event.raw_text or ""
             chat_id = event.chat_id
