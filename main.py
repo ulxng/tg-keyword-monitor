@@ -122,8 +122,8 @@ async def main() -> None:
             if dedup.is_seen(chat_id, msg_id):
                 logger.debug("Skipping duplicate: chat_id=%s msg_id=%s", chat_id, msg_id)
                 return
-            dedup.mark_seen(chat_id, msg_id)
-            await forward_match(client, config, event, matched, rate_limiter)
+            if await forward_match(client, config, event, matched, rate_limiter):
+                dedup.mark_seen(chat_id, msg_id)
         except Exception:
             logger.exception("Unhandled error in message handler")
 

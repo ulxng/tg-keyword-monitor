@@ -60,10 +60,10 @@ async def forward_match(
     event,
     matched_keywords: list[str],
     rate_limiter: RateLimiter,
-) -> None:
+) -> bool:
     if not rate_limiter.is_allowed():
         logger.warning("Rate limit reached, dropping match from chat %s", event.chat_id)
-        return
+        return False
 
     try:
         await client.forward_messages(config.destination_chat, event.message)
@@ -79,7 +79,9 @@ async def forward_match(
             await client.send_message(config.destination_chat, _fallback_notification(event))
         except Exception:
             logger.exception("Failed to send fallback notification for chat %s msg %s", event.chat_id, event.message.id)
-        return
+            return False
+        await asyncio.sleep(config.send_delay_seconds)
+        return True
     except FloodWaitError as e:
         wait = e.seconds + 5
         logger.warning("FloodWaitError: sleeping %ds then retrying", wait)
@@ -88,9 +90,10 @@ async def forward_match(
             await client.forward_messages(config.destination_chat, event.message)
         except Exception:
             logger.exception("Retry after FloodWait failed, dropping message")
-        return
+            return False
     except Exception:
         logger.exception("Failed to forward message from chat %s msg %s", event.chat_id, event.message.id)
-        return
+        return False
 
     await asyncio.sleep(config.send_delay_seconds)
+    return True
