@@ -2,29 +2,15 @@ import asyncio
 import sys
 
 import qrcode
-from telethon import TelegramClient
 from telethon.errors import SessionPasswordNeededError
 
+from client import create_client
 from config import load_config
 
 
 async def main() -> None:
     config = load_config("config.yaml")
-    proxy = {
-        "proxy_type": config.proxy_type,
-        "addr": config.proxy_host,
-        "port": config.proxy_port,
-        "username": config.proxy_username,
-        "password": config.proxy_password,
-        "rdns": True,
-    } if config.proxy_type else None
-
-    client = TelegramClient(
-        config.session_file,
-        config.api_id,
-        config.api_secret,
-        proxy=proxy,
-    )
+    client = create_client(config)
 
     await client.connect()
     try:

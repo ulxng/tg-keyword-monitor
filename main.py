@@ -2,8 +2,9 @@ import asyncio
 import logging
 import sys
 
-from telethon import TelegramClient, events
+from telethon import events
 
+from client import create_client
 from config import load_config
 from dedup import DedupStore
 from forwarder import RateLimiter, forward_match
@@ -40,21 +41,7 @@ async def main() -> None:
     dedup.prune_old(days=7)
     rate_limiter = RateLimiter(config.rate_limit_per_minute)
 
-    proxy = {
-        "proxy_type": config.proxy_type,
-        "addr": config.proxy_host,
-        "port": config.proxy_port,
-        "username": config.proxy_username,
-        "password": config.proxy_password,
-        "rdns": True,
-    } if config.proxy_type else None
-
-    client = TelegramClient(
-        config.session_file,
-        config.api_id,
-        config.api_secret,
-        proxy=proxy,
-    )
+    client = create_client(config)
 
     await client.connect()
     if not await client.is_user_authorized():
