@@ -40,16 +40,15 @@ keywords:
 
 ### Первый запуск — авторизация
 
-При первом запуске появится QR-код — отсканируйте его в Telegram (Настройки → Устройства → Подключить устройство).
-Запускать без `-d`, чтобы QR отображался в терминале:
+Авторизация вынесена в отдельный скрипт `login.py`. Запустить его один раз — появится QR-код, отсканировать в Telegram (Настройки → Устройства → Подключить устройство):
 
 ```bash
-docker compose run --rm monitor
+docker compose run --rm monitor python login.py
 ```
 
-Если включена 2FA — после сканирования появится запрос пароля в терминале.
+Если включена 2FA — после сканирования будет запрос пароля в терминале.
 
-После авторизации в корне проекта появится `monitor.session`. Контейнер можно остановить.
+После авторизации в `sessions/` появится файл сессии. `main.py` при отсутствии валидной сессии сразу завершится с ошибкой `No valid session. Run 'python login.py' first to authorize.`.
 
 ### Обычный запуск
 
@@ -95,6 +94,7 @@ docker compose build && docker compose up -d
 python -m venv .venv
 source .venv/bin/activate   # Windows: .venv\Scripts\activate
 pip install -r requirements.txt
+python login.py   # один раз, для авторизации
 python main.py
 ```
 

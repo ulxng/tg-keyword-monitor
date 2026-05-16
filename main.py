@@ -2,33 +2,13 @@ import asyncio
 import logging
 import sys
 
-import qrcode
-
 from telethon import TelegramClient, events
-from telethon.errors import SessionPasswordNeededError
 
 from config import load_config
 from dedup import DedupStore
 from forwarder import RateLimiter, forward_match
 from matcher import compile_keywords, find_matches
-
-
-def _build_proxy_kwargs(config) -> dict:
-    if not config.proxy_type:
-        return {}
-    ptype = config.proxy_type
-    if ptype == "mtproto":
-        from telethon.network import ConnectionTcpMTProxyRandomizedIntermediate
-        return {
-            "connection": ConnectionTcpMTProxyRandomizedIntermediate,
-            "proxy": (config.proxy_host, config.proxy_port, config.proxy_secret),
-        }
-    import socks
-    socks_type = socks.SOCKS5 if ptype == "socks5" else socks.SOCKS4
-    proxy = (socks_type, config.proxy_host, config.proxy_port)
-    if config.proxy_username:
-        proxy += (True, config.proxy_username, config.proxy_password)
-    return {"proxy": proxy}
+from proxy import build_proxy_kwargs
 
 
 def setup_logging(config) -> None:
@@ -65,33 +45,13 @@ async def main() -> None:
         config.session_file,
         config.api_id,
         config.api_secret,
-        **_build_proxy_kwargs(config),
+        **build_proxy_kwargs(config),
     )
 
     await client.connect()
     if not await client.is_user_authorized():
-        print("Scan the QR code below with your Telegram app.")
-        max_attempts = 3
-        for attempt in range(1, max_attempts + 1):
-            qr_login = await client.qr_login()
-            qr = qrcode.QRCode()
-            qr.add_data(qr_login.url)
-            qr.make()
-            qr.print_ascii(invert=True)
-            print(f"Waiting for scan... (attempt {attempt}/{max_attempts})")
-            try:
-                await qr_login.wait()
-                break
-            except SessionPasswordNeededError:
-                password = input("2FA password: ").strip()
-                await client.sign_in(password=password)
-                break
-            except asyncio.TimeoutError:
-                logger.warning("QR code expired (attempt %d/%d)", attempt, max_attempts)
-                if attempt == max_attempts:
-                    sys.exit("QR code expired too many times. Please restart and try again.")
-            except Exception as e:
-                sys.exit(f"Authorization failed: {e}\nPlease restart and try again.")
+        logger.error("No valid session. Run 'python login.py' first to authorize.")
+        sys.exit(1)
 
     logger.info("Loading dialogs to resolve chat entities...")
     await client.get_dialogs()
