@@ -28,7 +28,7 @@ send_delay_seconds: 1.5
 rate_limit_per_minute: 20
 
 # Logging level: DEBUG, INFO, WARNING, ERROR
-log_level: "DEBUG"
+log_level: "INFO"
 
 # Also log matches to stdout.
 log_to_stdout: true

@@ -1,11 +1,8 @@
 services:
   monitor:
-    image: python:3.13-slim
+    build: .
     working_dir: /app
-    command: >
-      sh -c "[ -f /venv/bin/pip ] || python -m venv /venv &&
-             /venv/bin/pip install -r requirements.txt -q &&
-             /venv/bin/python main.py"
+    command: python main.py
     restart: unless-stopped
     stdin_open: true
     tty: true
@@ -13,7 +10,3 @@ services:
       - "host.docker.internal:host-gateway"
     volumes:
       - .:/app
-      - venv:/venv
-
-volumes:
-  venv:
