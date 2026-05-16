@@ -8,7 +8,6 @@ from config import load_config
 from dedup import DedupStore
 from forwarder import RateLimiter, forward_match
 from matcher import compile_keywords, find_matches
-from proxy import build_proxy_kwargs
 
 
 def setup_logging(config) -> None:
@@ -41,11 +40,20 @@ async def main() -> None:
     dedup.prune_old(days=7)
     rate_limiter = RateLimiter(config.rate_limit_per_minute)
 
+    proxy = {
+        "proxy_type": config.proxy_type,
+        "addr": config.proxy_host,
+        "port": config.proxy_port,
+        "username": config.proxy_username,
+        "password": config.proxy_password,
+        "rdns": True,
+    } if config.proxy_type else None
+
     client = TelegramClient(
         config.session_file,
         config.api_id,
         config.api_secret,
-        **build_proxy_kwargs(config),
+        proxy=proxy,
     )
 
     await client.connect()

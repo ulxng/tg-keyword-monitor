@@ -61,10 +61,3 @@ log_file: null
 #   port: 1080
 #   username: "user"    # опционально
 #   password: "pass"    # опционально
-#
-# MTProto:
-# proxy:
-#   type: mtproto
-#   host: "proxy.example.com"
-#   port: 443
-#   secret: "abc123..."
