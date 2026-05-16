@@ -40,18 +40,14 @@ keywords:
 
 ### Первый запуск — авторизация
 
-При первом запуске нужно ввести номер телефона и код из Telegram.
-Запускать без `-d`, чтобы был доступ к stdin:
+При первом запуске появится QR-код — отсканируйте его в Telegram (Настройки → Устройства → Подключить устройство).
+Запускать без `-d`, чтобы QR отображался в терминале:
 
 ```bash
 docker compose run --rm monitor
 ```
 
-```
-Phone number (international format): +79991234567
-Enter the code you received: 12345
-Enter your 2FA password (if set, else press Enter):
-```
+Если включена 2FA — после сканирования появится запрос пароля в терминале.
 
 После авторизации в корне проекта появится `monitor.session`. Контейнер можно остановить.
 
@@ -75,27 +71,25 @@ docker compose down
 
 ### Узнать chat_id группы
 
-Если не знаешь точный ID для `destination_chat`:
+Если неизвестен точный ID для `destination_chat`:
 
 ```bash
-docker compose run --rm monitor /venv/bin/python list_dialogs.py
+docker compose run --rm monitor python list_dialogs.py
 ```
 
-Выведет список всех диалогов в формате `ID  Название`. Найди нужную группу и скопируй ID в конфиг.
+Выведет список всех диалогов в формате `ID  Название`. Найти нужную группу и скопировать ID в конфиг.
 
 ### Обновление зависимостей
 
-Если изменился `requirements.txt`, нужно пересоздать venv-volume:
+Если изменился `requirements.txt`, нужно пересобрать образ:
 
 ```bash
-docker compose down
-docker volume rm tg-keyword-monitor_venv
-docker compose up -d
+docker compose build && docker compose up -d
 ```
 
 ---
 
-## Локальный запуск (без Docker)
+## Запуск без Docker
 
 ```bash
 python -m venv .venv
