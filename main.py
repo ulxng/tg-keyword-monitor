@@ -2,7 +2,7 @@ import asyncio
 import logging
 import sys
 
-from telethon import events
+from telethon import events, utils
 
 from client import create_client
 from config import load_config
@@ -52,8 +52,13 @@ async def main() -> None:
     await client.get_dialogs()
     logger.info("Dialogs loaded.")
 
+    destination_entity = await client.get_entity(config.destination_chat)
+    destination_chat_id = utils.get_peer_id(destination_entity)
+
     def _should_process(event: events.NewMessage.Event) -> bool:
         if event.out or event.is_private:
+            return False
+        if event.chat_id == destination_chat_id:
             return False
         if config.chat_whitelist is not None and event.chat_id not in config.chat_whitelist:
             return False
