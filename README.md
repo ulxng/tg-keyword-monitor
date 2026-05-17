@@ -95,6 +95,14 @@ docker compose logs -f
 docker compose down
 ```
 
+### Изменение конфига (keywords и др.)
+
+После правки `config.yaml` нужно перезапустить контейнер — конфиг читается один раз при старте:
+
+```bash
+docker compose restart
+```
+
 ### Обновление зависимостей
 
 Если изменился `requirements.txt`, нужно пересобрать образ:
