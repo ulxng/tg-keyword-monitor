@@ -49,13 +49,13 @@ def _fallback_notification(message: events.NewMessage.Event) -> str:
     chat_label = _chat_label(message.chat)
     link = _build_message_link(message)
     date = message.message.date.astimezone(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
-
-    lines = [f"Чат: {chat_label}", f"Время: {date}"]
-    if link:
-        lines.append(f"Ссылка: {link}")
-    lines += ["", message.raw_text]
-
-    return "\n".join(lines)
+    return (
+        f"Чат: {chat_label}\n"
+        f"Время: {date}\n"
+        f"{f'Ссылка: {link}\n' if link else ''}"
+        f"\n"
+        f"{message.raw_text}"
+    )
 
 
 async def _resend_message(client: TelegramClient, destination: str | int, message: events.NewMessage.Event) -> None:
