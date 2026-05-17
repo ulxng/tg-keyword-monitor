@@ -69,6 +69,7 @@ async def main() -> None:
     @client.on(events.NewMessage)
     async def handler(event):
         try:
+            logger.debug("Incoming: chat_id=%s msg_id=%s out=%s is_private=%s", event.chat_id, event.message.id, event.out, event.is_private)
             if not _should_process(event):
                 return
             text = event.raw_text or ""
@@ -80,7 +81,7 @@ async def main() -> None:
                 return
             logger.debug("Keyword match: %s in chat_id=%s msg_id=%s", matched, chat_id, msg_id)
             if dedup.is_seen(chat_id, msg_id):
-                logger.debug("Skipping duplicate: chat_id=%s msg_id=%s", chat_id, msg_id)
+                logger.info("Skipping duplicate: chat_id=%s msg_id=%s", chat_id, msg_id)
                 return
             if await forward_match(client, config, event, matched, rate_limiter):
                 dedup.mark_seen(chat_id, msg_id)
