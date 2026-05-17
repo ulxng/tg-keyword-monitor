@@ -4,7 +4,7 @@ import time
 from collections import deque
 from datetime import timezone
 
-from telethon import TelegramClient
+from telethon import TelegramClient, events
 from telethon.errors import ChatForwardsRestrictedError, FloodWaitError
 from telethon.tl.types import Channel
 
@@ -34,35 +34,51 @@ def _chat_label(chat) -> str:
     return f"{name} (@{username})" if username else name
 
 
-def _fallback_notification(event) -> str:
-    chat = event.chat
+def _build_message_link(message: events.NewMessage.Event) -> str | None:
+    # Ссылки поддерживаются только для супергрупп и каналов (тип Channel).
+    # chat.id возвращает ID без префикса -100, что нужно для t.me/c/{id}/{msg_id}.
+    chat = message.chat
+    if not isinstance(chat, Channel):
+        return None
     chat_username = getattr(chat, "username", None)
-    chat_label = _chat_label(chat)
+    msg_id = message.message.id
+    return f"https://t.me/{chat_username}/{msg_id}" if chat_username else f"https://t.me/c/{chat.id}/{msg_id}"
 
-    # Когда пересылка запрещена, оригинальное сообщение недоступно — добавляем прямую ссылку,
-    # чтобы можно было перейти к нему вручную.
-    # Ссылки работают только в супергруппах и каналах (тип Channel);
-    # обычные группы (тип Chat) их не поддерживают.
-    # chat.id возвращает ID без префикса -100, что и нужно для t.me/c/{id}/{msg_id}.
-    link = None
-    if isinstance(chat, Channel):
-        msg_id = event.message.id
-        link = f"https://t.me/{chat_username}/{msg_id}" if chat_username else f"https://t.me/c/{chat.id}/{msg_id}"
 
-    date = event.message.date.astimezone(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
+def _fallback_notification(message: events.NewMessage.Event) -> str:
+    chat_label = _chat_label(message.chat)
+    link = _build_message_link(message)
+    date = message.message.date.astimezone(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
 
     lines = [f"Чат: {chat_label}", f"Время: {date}"]
     if link:
         lines.append(f"Ссылка: {link}")
-    lines += ["", event.raw_text]
+    lines += ["", message.raw_text]
 
     return "\n".join(lines)
+
+
+async def _resend_message(client: TelegramClient, destination: str | int, message: events.NewMessage.Event) -> None:
+    forwarded = await client.forward_messages(destination, message.message)
+
+    # Добавляем ссылку на оригинальное сообщение.
+    # В пересланных сообщениях из групп непонятно, из какого чата они пришли — в заголовке только имя отправителя.
+    # Для каналов (broadcast) источник понятен, там ссылка лишняя —
+    # кроме случая, когда само сообщение является форвардом: тогда заголовок покажет источник оригинала, а не канал.
+    is_broadcast_channel = isinstance(message.chat, Channel) and message.chat.broadcast
+    is_forwarded_message = message.message.fwd_from is not None
+    if is_broadcast_channel and not is_forwarded_message:
+        return None
+    note = _build_message_link(message)
+    if note:
+        forwarded_id = forwarded[0].id if isinstance(forwarded, list) else forwarded.id
+        await client.send_message(destination, note, reply_to=forwarded_id)
 
 
 async def forward_match(
     client: TelegramClient,
     config: MonitorConfig,
-    event,
+    event: events.NewMessage.Event,
     matched_keywords: list[str],
     rate_limiter: RateLimiter,
 ) -> bool:
@@ -77,7 +93,7 @@ async def forward_match(
         return False
 
     try:
-        await client.forward_messages(config.destination_chat, event.message)
+        await _resend_message(client, config.destination_chat, event)
         logger.info(
             "Forwarded match [%s] from chat %s msg %s",
             ", ".join(matched_keywords),
@@ -98,7 +114,7 @@ async def forward_match(
         logger.warning("FloodWaitError: sleeping %ds then retrying", wait)
         await asyncio.sleep(wait)
         try:
-            await client.forward_messages(config.destination_chat, event.message)
+            await _resend_message(client, config.destination_chat, event)
         except Exception:
             logger.exception("Retry after FloodWait failed, dropping message")
             return False
