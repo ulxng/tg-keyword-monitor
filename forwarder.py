@@ -71,7 +71,7 @@ async def _resend_message(client: TelegramClient, destination: str | int, messag
         return None
     note = _build_message_link(message)
     if note:
-        forwarded_id = forwarded[0].id if isinstance(forwarded, list) else forwarded.id
+        forwarded_id = forwarded.id
         await client.send_message(destination, note, reply_to=forwarded_id)
 
 
